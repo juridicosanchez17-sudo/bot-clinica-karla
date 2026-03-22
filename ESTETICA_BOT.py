@@ -14,21 +14,34 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,600&family=Montserrat:wght@300;400;500&display=swap');
     #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
     .stApp { background-color: #FAFAFA; background-image: radial-gradient(circle at 50% 0%, #FFFFFF 0%, #F4F1EA 100%); font-family: 'Montserrat', sans-serif; }
-    .encabezado-clinica { text-align: center; padding-top: 2rem; padding-bottom: 1rem; }
-    .titulo-principal { font-family: 'Playfair Display', serif !important; color: #1A1A1A !important; font-size: 3rem !important; margin-bottom: 0px !important; letter-spacing: -1px; }
-    .subtitulo { font-family: 'Montserrat', sans-serif; color: #A68A64; text-transform: uppercase; letter-spacing: 3px; font-size: 0.85rem; margin-top: 5px; font-weight: 500; }
-    .linea-separadora { width: 50px; height: 2px; background-color: #A68A64; margin: 15px auto 30px auto; }
-    [data-testid="stFileUploader"] { background-color: rgba(255, 255, 255, 0.6) !important; border: 1px solid #D9D2C5 !important; border-radius: 12px !important; padding: 1.5rem !important; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+    
+    .encabezado-clinica { text-align: center; padding-top: 3rem; padding-bottom: 1rem; }
+    .titulo-principal { font-family: 'Playfair Display', serif !important; color: #1A1A1A !important; font-size: 3.5rem !important; margin-bottom: 0px !important; letter-spacing: -1px; }
+    .subtitulo { font-family: 'Montserrat', sans-serif; color: #A68A64; text-transform: uppercase; letter-spacing: 3px; font-size: 0.9rem; margin-top: 5px; font-weight: 500; }
+    .linea-separadora { width: 50px; height: 2px; background-color: #A68A64; margin: 20px auto 40px auto; }
+    
+    /* Estilo del botón de lujo para entrar al chat */
+    .stButton>button {
+        background-color: #1A1A1A !important;
+        color: #FFFFFF !important;
+        border: none !important;
+        padding: 15px 30px !important;
+        font-family: 'Montserrat', sans-serif !important;
+        font-size: 1rem !important;
+        font-weight: 500 !important;
+        letter-spacing: 1px !important;
+        border-radius: 30px !important;
+        width: 100% !important;
+        transition: all 0.3s ease !important;
+    }
+    .stButton>button:hover {
+        background-color: #A68A64 !important;
+        box-shadow: 0 4px 15px rgba(166, 138, 100, 0.4) !important;
+    }
+
+    [data-testid="stFileUploader"] { background-color: rgba(255, 255, 255, 0.6) !important; border: 1px solid #D9D2C5 !important; border-radius: 12px !important; padding: 1.5rem !important; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin-bottom: 20px; }
     .stChatMessage { background-color: transparent !important; }
     </style>
-""", unsafe_allow_html=True)
-
-st.markdown("""
-    <div class="encabezado-clinica">
-        <h1 class="titulo-principal">Karla Soto</h1>
-        <p class="subtitulo">Medicina Estética Avanzada</p>
-        <div class="linea-separadora"></div>
-    </div>
 """, unsafe_allow_html=True)
 
 # --- 2. LLAVES MAESTRAS ---
@@ -79,63 +92,98 @@ if "mensajes" not in st.session_state:
     st.session_state.mensajes = [{"role": "system", "content": PROMPT_SISTEMA}]
 if "correo_enviado" not in st.session_state:
     st.session_state.correo_enviado = False
+if "mostrar_chat" not in st.session_state:
+    st.session_state.mostrar_chat = False # Switch para la vista de la página
 
-# --- 5. INTERFAZ ---
-foto_subida = st.file_uploader("Opcional: Sube una foto de la zona a tratar para la evaluación previa de la Dra.", type=["jpg", "jpeg", "png"])
+# --- 5. ENRUTADOR VISUAL (LANDING PAGE VS CHAT) ---
 
-for msj in st.session_state.mensajes:
-    if msj["role"] != "system":
-        avatar_icono = "👩‍⚕️" if msj["role"] == "assistant" else "👤"
-        with st.chat_message(msj["role"], avatar=avatar_icono):
-            st.markdown(msj["content"])
+if not st.session_state.mostrar_chat:
+    # VISTA 1: PORTADA ELEGANTE (Sin cuadros de texto estorbosos)
+    st.markdown("""
+        <div class="encabezado-clinica">
+            <h1 class="titulo-principal">Karla Soto</h1>
+            <p class="subtitulo">Medicina Estética Avanzada</p>
+            <div class="linea-separadora"></div>
+            <p style="color: #6C7A89; font-size: 1.1rem; line-height: 1.6; margin-bottom: 40px; font-weight: 300;">
+                Armonía, ciencia y vanguardia para resaltar tu mejor versión. <br>
+                Evaluación médica personalizada.
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Botón de enlace hacia la zona de conversión
+    if st.button("✨ Sección de Preguntas y Citas"):
+        st.session_state.mostrar_chat = True
+        st.rerun()
 
-user_input = st.chat_input("Escribe tu duda o solicita tu cita aquí...")
+else:
+    # VISTA 2: EL ASISTENTE VIRTUAL (Solo visible cuando se solicita)
+    st.markdown("""
+        <div style="text-align: center; padding-top: 1rem;">
+            <p class="subtitulo" style="font-size: 0.8rem;">Dra. Karla Soto</p>
+            <div class="linea-separadora" style="margin: 10px auto 20px auto;"></div>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("⬅️ Volver a la portada"):
+            st.session_state.mostrar_chat = False
+            st.rerun()
 
-if user_input:
-    st.session_state.mensajes.append({"role": "user", "content": user_input})
-    with st.chat_message("user", avatar="👤"):
-        st.markdown(user_input)
+    st.markdown("<br>", unsafe_allow_html=True)
+    foto_subida = st.file_uploader("Sube una foto de la zona a tratar para la evaluación previa de la Dra.", type=["jpg", "jpeg", "png"])
 
-    with st.chat_message("assistant", avatar="👩‍⚕️"):
-        with st.spinner("Procesando..."):
-            try:
-                respuesta = client.chat.completions.create(
-                    model="gemini-2.5-flash",
-                    messages=st.session_state.mensajes
-                )
-                texto_crudo = respuesta.choices[0].message.content
-                hubo_cierre = "[VENTA_CERRADA_2026]" in texto_crudo
-                texto_final_limpio = texto_crudo.replace("[VENTA_CERRADA_2026]", "").strip()
-                
-                st.markdown(texto_final_limpio)
-                st.session_state.mensajes.append({"role": "assistant", "content": texto_final_limpio})
+    for msj in st.session_state.mensajes:
+        if msj["role"] != "system":
+            avatar_icono = "👩‍⚕️" if msj["role"] == "assistant" else "👤"
+            with st.chat_message(msj["role"], avatar=avatar_icono):
+                st.markdown(msj["content"])
 
-                if hubo_cierre and not st.session_state.correo_enviado:
-                    st.session_state.correo_enviado = True 
+    user_input = st.chat_input("Escribe tu duda o solicita tu cita aquí...")
+
+    if user_input:
+        st.session_state.mensajes.append({"role": "user", "content": user_input})
+        with st.chat_message("user", avatar="👤"):
+            st.markdown(user_input)
+
+        with st.chat_message("assistant", avatar="👩‍⚕️"):
+            with st.spinner("Procesando..."):
+                try:
+                    respuesta = client.chat.completions.create(
+                        model="gemini-2.5-flash",
+                        messages=st.session_state.mensajes
+                    )
+                    texto_crudo = respuesta.choices[0].message.content
+                    hubo_cierre = "[VENTA_CERRADA_2026]" in texto_crudo
+                    texto_final_limpio = texto_crudo.replace("[VENTA_CERRADA_2026]", "").strip()
                     
-                    historial_completo = ""
-                    for m in st.session_state.mensajes:
-                        if m["role"] == "user":
-                            historial_completo += f"Paciente: {m['content']}\n"
-                        elif m["role"] == "assistant":
-                            historial_completo += f"IA: {m['content']}\n"
-                            
-                    resumen_chat = f"HISTORIAL COMPLETO:\n{'-'*40}\n{historial_completo}"
-                    if foto_subida:
-                        resumen_chat += "\n\n*(FOTO ADJUNTA)*"
-                    
-                    # 1. Enviar Alerta por Gmail
-                    notificar_a_karla_por_correo(resumen_chat, foto_adjunta=foto_subida)
-                    
-                    # 2. Guardar en la Bóveda de Supabase (Memoria Orgánica)
-                    try:
-                        supabase.table("conversaciones").insert({
-                            "historial": historial_completo, 
-                            "cierre_exitoso": True
-                        }).execute()
-                    except Exception:
-                        pass # Silencioso para el usuario
+                    st.markdown(texto_final_limpio)
+                    st.session_state.mensajes.append({"role": "assistant", "content": texto_final_limpio})
 
-            except Exception:
-                # Silenciador de Alta Gama para saturación de cuota
-                st.error("✨ Nuestras líneas están procesando múltiples solicitudes. Por favor, espera 2 minutos y vuelve a enviar tu mensaje.")
+                    if hubo_cierre and not st.session_state.correo_enviado:
+                        st.session_state.correo_enviado = True 
+                        
+                        historial_completo = ""
+                        for m in st.session_state.mensajes:
+                            if m["role"] == "user":
+                                historial_completo += f"Paciente: {m['content']}\n"
+                            elif m["role"] == "assistant":
+                                historial_completo += f"IA: {m['content']}\n"
+                                
+                        resumen_chat = f"HISTORIAL COMPLETO:\n{'-'*40}\n{historial_completo}"
+                        if foto_subida:
+                            resumen_chat += "\n\n*(FOTO ADJUNTA)*"
+                        
+                        notificar_a_karla_por_correo(resumen_chat, foto_adjunta=foto_subida)
+                        
+                        try:
+                            supabase.table("conversaciones").insert({
+                                "historial": historial_completo, 
+                                "cierre_exitoso": True
+                            }).execute()
+                        except Exception:
+                            pass
+
+                except Exception:
+                    st.error("✨ Nuestras líneas están procesando múltiples solicitudes. Por favor, espera 2 minutos y vuelve a enviar tu mensaje.")
