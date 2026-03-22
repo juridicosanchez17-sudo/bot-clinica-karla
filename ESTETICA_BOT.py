@@ -184,4 +184,4 @@ if user_input:
                     notificar_a_karla_por_correo(resumen_chat, foto_adjunta=foto_subida)
 
             except Exception as e:
-                st.error("En este momento nuestros sistemas están procesando, intenta de nuevo en unos segundos.")
+    st.error(f"🚨 Error técnico real: {e}")
