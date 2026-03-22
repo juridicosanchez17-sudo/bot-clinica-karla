@@ -4,67 +4,22 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
+from supabase import create_client, Client
 
 # --- 1. CONFIGURACIÓN Y ARQUITECTURA VISUAL ULTRA PREMIUM ---
 st.set_page_config(page_title="Karla Soto | Clínica Estética", page_icon="✨", layout="centered")
 
 st.markdown("""
     <style>
-    /* Importar fuentes de lujo desde Google Fonts */
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,600&family=Montserrat:wght@300;400;500&display=swap');
-
-    /* Limpiar la interfaz de Streamlit */
     #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
-    
-    /* Fondo global con gradiente radial sutil (estilo perla/nude) */
-    .stApp {
-        background-color: #FAFAFA;
-        background-image: radial-gradient(circle at 50% 0%, #FFFFFF 0%, #F4F1EA 100%);
-        font-family: 'Montserrat', sans-serif;
-    }
-    
-    /* Encabezado Principal */
-    .encabezado-clinica {
-        text-align: center;
-        padding-top: 2rem;
-        padding-bottom: 1rem;
-    }
-    .titulo-principal {
-        font-family: 'Playfair Display', serif !important;
-        color: #1A1A1A !important;
-        font-size: 3rem !important;
-        margin-bottom: 0px !important;
-        letter-spacing: -1px;
-    }
-    .subtitulo {
-        font-family: 'Montserrat', sans-serif;
-        color: #A68A64; /* Dorado mate */
-        text-transform: uppercase;
-        letter-spacing: 3px;
-        font-size: 0.85rem;
-        margin-top: 5px;
-        font-weight: 500;
-    }
-    .linea-separadora {
-        width: 50px;
-        height: 2px;
-        background-color: #A68A64;
-        margin: 15px auto 30px auto;
-    }
-
-    /* Estilo del Uploader (Caja de fotos) */
-    [data-testid="stFileUploader"] {
-        background-color: rgba(255, 255, 255, 0.6) !important;
-        border: 1px solid #D9D2C5 !important;
-        border-radius: 12px !important;
-        padding: 1.5rem !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-    }
-    
-    /* Personalización de los globos de Chat */
-    .stChatMessage {
-        background-color: transparent !important;
-    }
+    .stApp { background-color: #FAFAFA; background-image: radial-gradient(circle at 50% 0%, #FFFFFF 0%, #F4F1EA 100%); font-family: 'Montserrat', sans-serif; }
+    .encabezado-clinica { text-align: center; padding-top: 2rem; padding-bottom: 1rem; }
+    .titulo-principal { font-family: 'Playfair Display', serif !important; color: #1A1A1A !important; font-size: 3rem !important; margin-bottom: 0px !important; letter-spacing: -1px; }
+    .subtitulo { font-family: 'Montserrat', sans-serif; color: #A68A64; text-transform: uppercase; letter-spacing: 3px; font-size: 0.85rem; margin-top: 5px; font-weight: 500; }
+    .linea-separadora { width: 50px; height: 2px; background-color: #A68A64; margin: 15px auto 30px auto; }
+    [data-testid="stFileUploader"] { background-color: rgba(255, 255, 255, 0.6) !important; border: 1px solid #D9D2C5 !important; border-radius: 12px !important; padding: 1.5rem !important; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+    .stChatMessage { background-color: transparent !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -76,45 +31,42 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# --- 2. LLAVES MAESTRAS (PRODUCCIÓN EN NUBE) ---
+# --- 2. LLAVES MAESTRAS ---
 GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
 CORREO_MAESTRO = st.secrets["CORREO_MAESTRO"]
 GMAIL_APP_PASSWORD = st.secrets["GMAIL_APP_PASSWORD"]
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 
 client = OpenAI(base_url="https://generativelanguage.googleapis.com/v1beta/openai/", api_key=GEMINI_API_KEY)
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# --- 3. SISTEMA DE ALERTA A GMAIL ---
+# --- 3. SISTEMA DE ALERTA ---
 def notificar_a_karla_por_correo(resumen_chat, foto_adjunta=None):
     msg = MIMEMultipart()
     msg['From'] = CORREO_MAESTRO
     msg['To'] = CORREO_MAESTRO
     msg['Subject'] = "🚨 NUEVO PROSPECTO (+FOTO) - Bot Clínico"
-
     msg.attach(MIMEText(resumen_chat, 'plain'))
-
     if foto_adjunta is not None:
         try:
             foto_adjunta.seek(0)
-            image_data = foto_adjunta.read()
-            image_package = MIMEImage(image_data, name=foto_adjunta.name)
+            image_package = MIMEImage(foto_adjunta.read(), name=foto_adjunta.name)
             msg.attach(image_package)
         except Exception:
             pass 
-
     try:
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
         server.login(CORREO_MAESTRO, GMAIL_APP_PASSWORD)
-        texto = msg.as_string()
-        server.sendmail(CORREO_MAESTRO, CORREO_MAESTRO, texto)
+        server.sendmail(CORREO_MAESTRO, CORREO_MAESTRO, msg.as_string())
         server.quit()
     except Exception:
         pass 
 
-# --- 4. CEREBRO GEMINI (Prompt Calibrado con Candado Criptográfico) ---
+# --- 4. CEREBRO GEMINI ---
 PROMPT_SISTEMA = """Eres la asistente virtual exclusiva de la Dra. Karla Soto, médica experta en medicina estética avanzada. 
 Tu tono es cálido, profesional, empático y de alta gama. 
-
 TUS REGLAS DE OPERACIÓN:
 1. Conoces los tratamientos principales: Toxina Botulínica (Botox), Ácido Hialurónico (relleno de labios, ojeras, rinomodelación), Armonización Facial, Bioestimuladores de colágeno y Faciales clínicos.
 2. NUNCA das diagnósticos médicos definitivos ni prometes resultados exactos. Si el paciente subió una foto, dile que la Dra. Karla la revisará personalmente.
@@ -123,13 +75,12 @@ TUS REGLAS DE OPERACIÓN:
 5. REGLA DE ORO DEL CIERRE: SOLO CUANDO el paciente te haya dado explícitamente su número de teléfono, confírmale que la Dra. Karla lo contactará hoy mismo. 
 6. GATILLO DEL SISTEMA: Inmediatamente después de despedirte en el cierre exitoso (y SOLO si ya tienes el teléfono del paciente en la conversación), DEBES escribir exactamente esta etiqueta al final de tu mensaje: [VENTA_CERRADA_2026]"""
 
-# --- 5. INICIALIZACIÓN DE MEMORIA Y SWITCH DE SEGURIDAD ---
 if "mensajes" not in st.session_state:
     st.session_state.mensajes = [{"role": "system", "content": PROMPT_SISTEMA}]
 if "correo_enviado" not in st.session_state:
-    st.session_state.correo_enviado = False # El candado antispam
+    st.session_state.correo_enviado = False
 
-# --- 6. INTERFAZ DE USUARIO ---
+# --- 5. INTERFAZ ---
 foto_subida = st.file_uploader("Opcional: Sube una foto de la zona a tratar para la evaluación previa de la Dra.", type=["jpg", "jpeg", "png"])
 
 for msj in st.session_state.mensajes:
@@ -153,36 +104,38 @@ if user_input:
                     messages=st.session_state.mensajes
                 )
                 texto_crudo = respuesta.choices[0].message.content
-                
-                # Lógica del Candado Criptográfico
                 hubo_cierre = "[VENTA_CERRADA_2026]" in texto_crudo
-                
-                # Limpiamos el texto para que el paciente NO vea la etiqueta técnica
                 texto_final_limpio = texto_crudo.replace("[VENTA_CERRADA_2026]", "").strip()
                 
                 st.markdown(texto_final_limpio)
                 st.session_state.mensajes.append({"role": "assistant", "content": texto_final_limpio})
 
-                # Disparo único y extracción de historial total
                 if hubo_cierre and not st.session_state.correo_enviado:
-                    st.session_state.correo_enviado = True # Cierra el candado de forma permanente en esta sesión
+                    st.session_state.correo_enviado = True 
                     
-                    text_adicional = ""
-                    if foto_subida is not None:
-                         text_adicional = "\n\n*(FOTO ADJUNTA POR EL PACIENTE EN ESTE CORREO)*"
-                    
-                    # Armamos el historial completo para Karla
-                    historial_completo = "HISTORIAL COMPLETO DE LA CONVERSACIÓN:\n" + "-"*40 + "\n"
+                    historial_completo = ""
                     for m in st.session_state.mensajes:
                         if m["role"] == "user":
                             historial_completo += f"Paciente: {m['content']}\n"
                         elif m["role"] == "assistant":
                             historial_completo += f"IA: {m['content']}\n"
                             
-                    resumen_chat = f"{historial_completo}{text_adicional}"
+                    resumen_chat = f"HISTORIAL COMPLETO:\n{'-'*40}\n{historial_completo}"
+                    if foto_subida:
+                        resumen_chat += "\n\n*(FOTO ADJUNTA)*"
                     
+                    # 1. Enviar Alerta por Gmail
                     notificar_a_karla_por_correo(resumen_chat, foto_adjunta=foto_subida)
+                    
+                    # 2. Guardar en la Bóveda de Supabase (Memoria Orgánica)
+                    try:
+                        supabase.table("conversaciones").insert({
+                            "historial": historial_completo, 
+                            "cierre_exitoso": True
+                        }).execute()
+                    except Exception:
+                        pass # Silencioso para el usuario
 
-            except Exception as e:
-                # Aquí está el diagnóstico abierto con la indentación perfecta
-                st.error(f"🚨 Error técnico real: {e}")
+            except Exception:
+                # Silenciador de Alta Gama para saturación de cuota
+                st.error("✨ Nuestras líneas están procesando múltiples solicitudes. Por favor, espera 2 minutos y vuelve a enviar tu mensaje.")
