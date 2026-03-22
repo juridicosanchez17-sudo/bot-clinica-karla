@@ -184,4 +184,5 @@ if user_input:
                     notificar_a_karla_por_correo(resumen_chat, foto_adjunta=foto_subida)
 
             except Exception as e:
-    st.error(f"🚨 Error técnico real: {e}")
+                # Aquí está el diagnóstico abierto con la indentación perfecta
+                st.error(f"🚨 Error técnico real: {e}")
